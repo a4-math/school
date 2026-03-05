@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dismissal</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 12px; background: #fff; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { font-size: 14px; color: #888; margin-bottom: 16px; }
+  .big { font-size: 64px; font-weight: bold; line-height: 1; }
+  .label { font-size: 14px; color: #888; margin-top: 4px; }
+  a { margin-top: 24px; display: flex; align-items: center; gap: 8px; padding: 12px 22px; border: 1px solid #ccc; border-radius: 10px; text-decoration: none; color: #000; font-size: 14px; }
+  a:hover { background: #f5f5f5; }
+
+  #dm-btn { position:fixed; top:14px; right:16px; background:#fff; border:1px solid #ccc; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; z-index:999; }
+  body.dark { background:#111 !important; color:#eee !important; }
+  body.dark #dm-btn { background:#222; border-color:#444; color:#eee; }
+  body.dark a, body.dark a.back { border-color:#333 !important; color:#eee !important; }
+  body.dark a:hover, body.dark a.back:hover { background:#222 !important; }
+  body.dark .sub, body.dark .label, body.dark .date, body.dark .term, body.dark .events-title { color:#666 !important; }
+  body.dark .section-title { color:#555 !important; border-color:#222 !important; }
+  body.dark .event { border-color:#222 !important; }
+  body.dark .event-text { color:#ccc !important; }
+  body.dark .weather-info { color:#aaa !important; }
+  body.dark .month-title { border-color:#222 !important; color:#ddd !important; }
+  body.dark .nav-btn { background:#111 !important; border-color:#333 !important; color:#eee !important; }
+  body.dark .nav-btn:hover { background:#222 !important; }
+  body.dark .dow { color:#555 !important; }
+  body.dark .day { color:#bbb !important; }
+  body.dark .day.other { color:#444 !important; }
+  body.dark .day.today { background:#facc15 !important; color:#111 !important; }
+  body.dark hr { border-color:#222 !important; }
+  body.dark .periods li { border-color:#222 !important; color:#ccc !important; }
+  body.dark .periods li span.time { color:#555 !important; }
+  body.dark .no-events { color:#555 !important; }
+  body.dark .clock { color:#eee !important; }
+  body.dark .weather-temp { color:#eee !important; }
+
+</style>
+</head>
+<body>
+
+<h1><i class="fa-solid fa-bus-simple"></i> Dismissal</h1>
+<div class="sub">School ends at 3:00 PM</div>
+<div class="big" id="countdown">--:--:--</div>
+<div class="label" id="label"></div>
+
+<a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back</a>
+
+<script>
+function pad(n) { return String(n).padStart(2, "0"); }
+
+function update() {
+  const now = new Date();
+  const dismissal = new Date();
+  dismissal.setHours(15, 0, 0, 0);
+
+  const diff = dismissal - now;
+
+  if (diff <= 0) {
+    document.getElementById("countdown").textContent = "🎉";
+    document.getElementById("label").textContent = "School's out!";
+    return;
+  }
+
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+
+  document.getElementById("countdown").textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  document.getElementById("label").textContent = "until dismissal";
+}
+
+update();
+setInterval(update, 1000);
+</script>
+
+
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      window.addEventListener("DOMContentLoaded",function(){
+        var b=document.getElementById("dm-btn");
+        if(b) b.innerHTML='<i class="fa-solid fa-sun"></i>';
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    document.getElementById("dm-btn").textContent=on?"☀️ Light":"🌙 Dark";
+  }
+</script>
+
+
+<button id="dm-btn" onclick="toggleDark()" title="Toggle dark mode">
+  <i id="dm-icon" class="fa-solid fa-moon"></i>
+</button>
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      document.addEventListener("DOMContentLoaded",function(){
+        var i=document.getElementById("dm-icon");
+        if(i){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    var i=document.getElementById("dm-icon");
+    if(on){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+    else  { i.classList.remove("fa-sun");  i.classList.add("fa-moon"); }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Next Period</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 12px; background: #fff; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { font-size: 14px; color: #888; margin-bottom: 16px; }
+  .big { font-size: 64px; font-weight: bold; line-height: 1; }
+  .label { font-size: 14px; color: #888; margin-top: 4px; }
+  hr { width: 220px; border: none; border-top: 1px solid #eee; margin: 16px 0; }
+  .periods { list-style: none; width: 220px; }
+  .periods li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #444; }
+  .periods li.active { font-weight: bold; color: #000; }
+  .periods li span.time { color: #aaa; font-size: 12px; }
+  a { margin-top: 24px; display: flex; align-items: center; gap: 8px; padding: 12px 22px; border: 1px solid #ccc; border-radius: 10px; text-decoration: none; color: #000; font-size: 14px; }
+  a:hover { background: #f5f5f5; }
+
+  #dm-btn { position:fixed; top:14px; right:16px; background:#fff; border:1px solid #ccc; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; z-index:999; }
+  body.dark { background:#111 !important; color:#eee !important; }
+  body.dark #dm-btn { background:#222; border-color:#444; color:#eee; }
+  body.dark a, body.dark a.back { border-color:#333 !important; color:#eee !important; }
+  body.dark a:hover, body.dark a.back:hover { background:#222 !important; }
+  body.dark .sub, body.dark .label, body.dark .date, body.dark .term, body.dark .events-title { color:#666 !important; }
+  body.dark .section-title { color:#555 !important; border-color:#222 !important; }
+  body.dark .event { border-color:#222 !important; }
+  body.dark .event-text { color:#ccc !important; }
+  body.dark .weather-info { color:#aaa !important; }
+  body.dark .month-title { border-color:#222 !important; color:#ddd !important; }
+  body.dark .nav-btn { background:#111 !important; border-color:#333 !important; color:#eee !important; }
+  body.dark .nav-btn:hover { background:#222 !important; }
+  body.dark .dow { color:#555 !important; }
+  body.dark .day { color:#bbb !important; }
+  body.dark .day.other { color:#444 !important; }
+  body.dark .day.today { background:#facc15 !important; color:#111 !important; }
+  body.dark hr { border-color:#222 !important; }
+  body.dark .periods li { border-color:#222 !important; color:#ccc !important; }
+  body.dark .periods li span.time { color:#555 !important; }
+  body.dark .no-events { color:#555 !important; }
+  body.dark .clock { color:#eee !important; }
+  body.dark .weather-temp { color:#eee !important; }
+
+</style>
+</head>
+<body>
+
+<h1><i class="fa-solid fa-clock"></i> Next Period</h1>
+<div class="sub" id="sub"></div>
+<div class="big" id="countdown">--:--</div>
+<div class="label" id="label"></div>
+
+<hr>
+
+<ul class="periods" id="period-list"></ul>
+
+<a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back</a>
+
+<script>
+const periods = [
+  { name: "Period 1", start: [8,  0], end: [8, 46] },
+  { name: "Period 2", start: [8, 46], end: [9, 36] },
+  { name: "Period 3", start: [9, 36], end: [10,26] },
+  { name: "Period 4", start: [10,26], end: [11,24] },
+  { name: "Period 5", start: [11,24], end: [12,22] },
+  { name: "Period 6", start: [12,22], end: [13,20] },
+  { name: "Period 7", start: [13,20], end: [14,10] },
+  { name: "Period 8", start: [14,10], end: [15, 0] },
+];
+
+function toMin(h, m) { return h * 60 + m; }
+function pad(n) { return String(n).padStart(2, "0"); }
+function fmt([h, m]) {
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+  return `${hh}:${pad(m)} ${ampm}`;
+}
+
+function update() {
+  const now = new Date();
+  const cur = toMin(now.getHours(), now.getMinutes()) + now.getSeconds() / 60;
+
+  let current = null, next = null;
+  for (const p of periods) {
+    const s = toMin(...p.start), e = toMin(...p.end);
+    if (cur >= s && cur < e) current = p;
+    else if (cur < s && !next) next = p;
+  }
+
+  // Countdown display
+  let diffSec, subText, labelText;
+
+  if (current) {
+    const endSec = (current.end[0] * 3600 + current.end[1] * 60);
+    const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    diffSec = endSec - nowSec;
+    subText = current.name + " ends in";
+    labelText = next ? "Up next: " + next.name : "Last period";
+  } else if (next) {
+    const startSec = (next.start[0] * 3600 + next.start[1] * 60);
+    const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    diffSec = startSec - nowSec;
+    subText = next.name + " starts in";
+    labelText = fmt(next.start) + " – " + fmt(next.end);
+  } else {
+    document.getElementById("sub").textContent = "School is out";
+    document.getElementById("countdown").textContent = "--";
+    document.getElementById("label").textContent = "See you tomorrow!";
+    renderList(null);
+    return;
+  }
+
+  const m = Math.floor(diffSec / 60);
+  const s = Math.floor(diffSec % 60);
+  document.getElementById("sub").textContent = subText;
+  document.getElementById("countdown").textContent = `${pad(m)}:${pad(s)}`;
+  document.getElementById("label").textContent = labelText;
+  renderList(current);
+}
+
+function renderList(active) {
+  const now = new Date();
+  const cur = toMin(now.getHours(), now.getMinutes());
+  document.getElementById("period-list").innerHTML = periods.map(p => {
+    const isActive = active && p.name === active.name;
+    const past = cur > toMin(...p.end);
+    return `<li class="${isActive ? 'active' : ''}" style="opacity:${past ? 0.35 : 1}">
+      <span>${p.name}</span>
+      <span class="time">${fmt(p.start)} – ${fmt(p.end)}</span>
+    </li>`;
+  }).join("");
+}
+
+update();
+setInterval(update, 1000);
+</script>
+
+
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      window.addEventListener("DOMContentLoaded",function(){
+        var b=document.getElementById("dm-btn");
+        if(b) b.innerHTML='<i class="fa-solid fa-sun"></i>';
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    document.getElementById("dm-btn").textContent=on?"☀️ Light":"🌙 Dark";
+  }
+</script>
+
+
+<button id="dm-btn" onclick="toggleDark()" title="Toggle dark mode">
+  <i id="dm-icon" class="fa-solid fa-moon"></i>
+</button>
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      document.addEventListener("DOMContentLoaded",function(){
+        var i=document.getElementById("dm-icon");
+        if(i){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    var i=document.getElementById("dm-icon");
+    if(on){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+    else  { i.classList.remove("fa-sun");  i.classList.add("fa-moon"); }
+  }
+</script>
+
+</body>
+</html>

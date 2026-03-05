@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today's Happenings</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: sans-serif; background:#fff; padding:24px 16px 40px; max-width:480px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .date { font-size:14px; color:#888; margin-bottom:20px; }
+
+  .section { margin-bottom:24px; }
+  .section-title { font-size:13px; font-weight:600; color:#aaa; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; border-bottom:1px solid #f0f0f0; padding-bottom:6px; }
+
+  /* Clock */
+  .clock { font-size:52px; font-weight:bold; letter-spacing:-1px; }
+
+  /* Weather */
+  .weather-row { display:flex; align-items:center; gap:16px; }
+  .weather-temp { font-size:42px; font-weight:bold; }
+  .weather-info { font-size:14px; color:#555; line-height:1.7; }
+  .weather-error { font-size:13px; color:#aaa; }
+
+  /* Events */
+  .event { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid #f5f5f5; font-size:14px; }
+  .event:last-child { border-bottom:none; }
+  .event i { width:16px; text-align:center; margin-top:2px; flex-shrink:0; }
+  .event-text { color:#222; line-height:1.4; }
+  .no-school { color:#ef4444; }
+  .no-events { font-size:13px; color:#aaa; padding:8px 0; }
+
+  a.back { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border:1px solid #ccc; border-radius:10px; text-decoration:none; color:#000; font-size:14px; margin-top:8px; }
+  a.back:hover { background:#f5f5f5; }
+
+  #dm-btn { position:fixed; top:14px; right:16px; background:#fff; border:1px solid #ccc; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; z-index:999; }
+  body.dark { background:#111 !important; color:#eee !important; }
+  body.dark #dm-btn { background:#222; border-color:#444; color:#eee; }
+  body.dark a, body.dark a.back { border-color:#333 !important; color:#eee !important; }
+  body.dark a:hover, body.dark a.back:hover { background:#222 !important; }
+  body.dark .sub, body.dark .label, body.dark .date, body.dark .term, body.dark .events-title { color:#666 !important; }
+  body.dark .section-title { color:#555 !important; border-color:#222 !important; }
+  body.dark .event { border-color:#222 !important; }
+  body.dark .event-text { color:#ccc !important; }
+  body.dark .weather-info { color:#aaa !important; }
+  body.dark .month-title { border-color:#222 !important; color:#ddd !important; }
+  body.dark .nav-btn { background:#111 !important; border-color:#333 !important; color:#eee !important; }
+  body.dark .nav-btn:hover { background:#222 !important; }
+  body.dark .dow { color:#555 !important; }
+  body.dark .day { color:#bbb !important; }
+  body.dark .day.other { color:#444 !important; }
+  body.dark .day.today { background:#facc15 !important; color:#111 !important; }
+  body.dark hr { border-color:#222 !important; }
+  body.dark .periods li { border-color:#222 !important; color:#ccc !important; }
+  body.dark .periods li span.time { color:#555 !important; }
+  body.dark .no-events { color:#555 !important; }
+  body.dark .clock { color:#eee !important; }
+  body.dark .weather-temp { color:#eee !important; }
+
+</style>
+</head>
+<body>
+
+<h1><i class="fa-solid fa-sun"></i> Today's Happenings</h1>
+<div class="date" id="date-display"></div>
+
+<!-- Clock -->
+<div class="section">
+  <div class="section-title"><i class="fa-solid fa-clock"></i> Time</div>
+  <div class="clock" id="clock">--:--:--</div>
+</div>
+
+<!-- Weather -->
+<div class="section">
+  <div class="section-title"><i class="fa-solid fa-cloud-sun"></i> Weather — Christiana, TN</div>
+  <div id="weather-content"><div class="weather-error">Loading weather…</div></div>
+</div>
+
+<!-- Events -->
+<div class="section">
+  <div class="section-title"><i class="fa-solid fa-calendar-day"></i> Events Today</div>
+  <div id="events-list"></div>
+</div>
+
+<a class="back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Back</a>
+
+<script>
+// ── Clock & Date ──────────────────────────────────────────
+function pad(n) { return String(n).padStart(2,"0"); }
+
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  document.getElementById("clock").textContent = `${pad(h)}:${pad(m)}:${pad(s)} ${ampm}`;
+}
+
+function setDate() {
+  const now = new Date();
+  document.getElementById("date-display").textContent = now.toLocaleDateString("en-US", {
+    weekday:"long", month:"long", day:"numeric", year:"numeric"
+  });
+}
+
+setDate();
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── Weather (Open-Meteo, no key needed) ──────────────────
+async function loadWeather() {
+  try {
+    // 37037 = Eagleville, TN coords
+    const lat = 35.7215, lon = -86.6486;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,relativehumidity_2m&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=America%2FChicago`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const c = data.current;
+
+    const wmoDesc = {
+      0:"Clear Sky",1:"Mainly Clear",2:"Partly Cloudy",3:"Overcast",
+      45:"Foggy",48:"Icy Fog",
+      51:"Light Drizzle",53:"Drizzle",55:"Heavy Drizzle",
+      61:"Light Rain",63:"Rain",65:"Heavy Rain",
+      71:"Light Snow",73:"Snow",75:"Heavy Snow",77:"Snow Grains",
+      80:"Rain Showers",81:"Rain Showers",82:"Violent Showers",
+      85:"Snow Showers",86:"Heavy Snow Showers",
+      95:"Thunderstorm",96:"Thunderstorm w/ Hail",99:"Thunderstorm w/ Heavy Hail"
+    };
+
+    const wmoIcon = {
+      0:"fa-sun",1:"fa-sun",2:"fa-cloud-sun",3:"fa-cloud",
+      45:"fa-smog",48:"fa-smog",
+      51:"fa-cloud-drizzle",53:"fa-cloud-drizzle",55:"fa-cloud-drizzle",
+      61:"fa-cloud-rain",63:"fa-cloud-rain",65:"fa-cloud-showers-heavy",
+      71:"fa-snowflake",73:"fa-snowflake",75:"fa-snowflake",77:"fa-snowflake",
+      80:"fa-cloud-showers-heavy",81:"fa-cloud-showers-heavy",82:"fa-cloud-showers-heavy",
+      85:"fa-snowflake",86:"fa-snowflake",
+      95:"fa-bolt",96:"fa-bolt",99:"fa-bolt"
+    };
+
+    const code = c.weathercode;
+    const desc = wmoDesc[code] || "Unknown";
+    const icon = wmoIcon[code] || "fa-cloud";
+    const temp = Math.round(c.temperature_2m);
+    const feels = Math.round(c.apparent_temperature);
+    const wind = Math.round(c.windspeed_10m);
+    const humidity = c.relativehumidity_2m;
+
+    document.getElementById("weather-content").innerHTML = `
+      <div class="weather-row">
+        <i class="fa-solid ${icon}" style="font-size:42px;color:#f59e0b;"></i>
+        <div class="weather-temp">${temp}°F</div>
+        <div class="weather-info">
+          ${desc}<br>
+          Feels like ${feels}°F<br>
+          Wind ${wind} mph · Humidity ${humidity}%
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById("weather-content").innerHTML = `<div class="weather-error">Unable to load weather.</div>`;
+  }
+}
+
+loadWeather();
+
+// ── Events ───────────────────────────────────────────────
+const EVENTS = [
+  { date:"2025-12-22", end:"2026-01-02", text:"Winter Break", icon:"fa-snowflake", color:"#3b82f6" },
+  { date:"2026-01-07", text:"Students Return from Winter Break", icon:"fa-school", color:"#10b981" },
+  { date:"2026-01-08", text:"Basketball vs. Whitworth Buchanan MS (Away)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-09", text:"Report Cards", icon:"fa-file-lines", color:"#8b5cf6" },
+  { date:"2026-01-12", text:"Basketball vs. Oakland MS (Home)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-13", text:"Basketball vs. Coffee County MS (Away)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-15", text:"Basketball vs. Siegel MS (Home)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-16", text:"6th/8th Grade Health Screenings", icon:"fa-stethoscope", color:"#06b6d4" },
+  { date:"2026-01-19", text:"Martin Luther King Jr. Day — No School", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-01-20", text:"Basketball vs. Blackman MS (Home)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-22", text:"Basketball vs. Rockvale MS (Away)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-02-05", text:"Progress Reports", icon:"fa-chart-bar", color:"#8b5cf6" },
+  { date:"2026-02-16", text:"Presidents' Day — No School", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-02-19", text:"CPA Preview Concert with RHS (6:30pm)", icon:"fa-music", color:"#f43f5e" },
+  { date:"2026-02-25", text:"Baseball vs. Central Magnet School (4:30pm, Barfield Park)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-06", text:"End of 3rd 9 Weeks", icon:"fa-flag-checkered", color:"#111" },
+  { date:"2026-03-09", text:"Baseball/Soccer/Softball vs. Siegel MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-10", text:"STEAM Night (5:00pm – 6:30pm)", icon:"fa-flask", color:"#06b6d4" },
+  { date:"2026-03-10", text:"Spring Picture Day", icon:"fa-camera", color:"#f59e0b" },
+  { date:"2026-03-12", text:"Teacher Admin Day — No School for Students", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-03-12", text:"Baseball/Soccer/Softball vs. Rock Springs MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-16", text:"Baseball/Soccer/Softball vs. Rocky Fork MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-19", text:"Parent/Teacher Conferences (3:00pm – 6:00pm)", icon:"fa-people-arrows", color:"#8b5cf6" },
+  { date:"2026-03-19", text:"Baseball/Soccer/Softball vs. Whitworth Buchanan MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-23", text:"Baseball/Soccer/Softball vs. Smyrna MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-24", text:"Band Concert (6:30pm)", icon:"fa-music", color:"#f43f5e" },
+  { date:"2026-03-26", text:"Baseball/Soccer/Softball vs. Central Magnet (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-30", end:"2026-04-03", text:"Spring Break", icon:"fa-sun", color:"#f59e0b" },
+  { date:"2026-04-06", text:"Baseball/Soccer/Softball vs. Rockvale MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-09", text:"Baseball/Soccer/Softball vs. Blackman MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-13", text:"Baseball/Soccer/Softball vs. Stewart's Creek MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-13", end:"2026-05-01", text:"TCAP Testing", icon:"fa-pencil", color:"#ef4444" },
+  { date:"2026-04-16", text:"Progress Reports", icon:"fa-chart-bar", color:"#8b5cf6" },
+  { date:"2026-04-16", text:"Baseball/Soccer/Softball vs. Oakland MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-20", text:"Baseball/Soccer/Softball vs. LaVergne MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-05-05", text:"Teacher Admin Day — No School for Students", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-05-08", text:"Spring Fling Semi-Formal Dance (6:00pm – 8:00pm)", icon:"fa-music", color:"#f43f5e" },
+  { date:"2026-05-09", text:"6th Grade All Star Band", icon:"fa-star", color:"#f59e0b" },
+  { date:"2026-05-14", text:"CHMS Fine Arts Night (6:00pm – 7:00pm)", icon:"fa-palette", color:"#f43f5e" },
+  { date:"2026-05-15", text:"Cougar Carnival", icon:"fa-ferris-wheel", color:"#f59e0b" },
+  { date:"2026-05-25", text:"Memorial Day — No School", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-05-28", text:"Teacher Workday — No School for Students", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-05-29", text:"2-Hour Day / End of 4th 9 Weeks / Report Cards", icon:"fa-flag-checkered", color:"#111" },
+];
+
+function getTodayEvents() {
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const todayStr = now.toISOString().slice(0,10);
+
+  const results = [];
+  const seen = new Set();
+  for (const ev of EVENTS) {
+    const start = new Date(ev.date + "T00:00:00");
+    const end = ev.end ? new Date(ev.end + "T00:00:00") : start;
+    if (now >= start && now <= end && !seen.has(ev.text)) {
+      results.push(ev);
+      seen.add(ev.text);
+    }
+  }
+  return results;
+}
+
+const todayEvs = getTodayEvents();
+const list = document.getElementById("events-list");
+if (!todayEvs.length) {
+  list.innerHTML = `<div class="no-events">No events today.</div>`;
+} else {
+  list.innerHTML = todayEvs.map(e =>
+    `<div class="event${e.noschool?" no-school":""}">
+      <i class="fa-solid ${e.icon}" style="color:${e.noschool?"#ef4444":e.color}"></i>
+      <span class="event-text">${e.text}</span>
+    </div>`
+  ).join("");
+}
+</script>
+
+
+
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      window.addEventListener("DOMContentLoaded",function(){
+        var b=document.getElementById("dm-btn");
+        if(b) b.innerHTML='<i class="fa-solid fa-sun"></i>';
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    document.getElementById("dm-btn").textContent=on?"☀️ Light":"🌙 Dark";
+  }
+</script>
+
+
+<button id="dm-btn" onclick="toggleDark()" title="Toggle dark mode">
+  <i id="dm-icon" class="fa-solid fa-moon"></i>
+</button>
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      document.addEventListener("DOMContentLoaded",function(){
+        var i=document.getElementById("dm-icon");
+        if(i){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    var i=document.getElementById("dm-icon");
+    if(on){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+    else  { i.classList.remove("fa-sun");  i.classList.add("fa-moon"); }
+  }
+</script>
+
+</body>
+</html>

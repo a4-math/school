@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: sans-serif; background:#fff; padding:24px 16px 40px; max-width:480px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+
+  .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .nav-btn { background:none; border:1px solid #ccc; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:14px; }
+  .nav-btn:hover { background:#f5f5f5; }
+  .month-label { font-size:17px; font-weight:bold; }
+
+  .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .dow { text-align:center; font-size:11px; color:#aaa; padding:4px 0 8px; font-weight:600; text-transform:uppercase; }
+  .day { text-align:center; padding:6px 2px; border-radius:8px; font-size:13px; min-height:36px; cursor:default; position:relative; }
+  .day.other { color:#ddd; }
+  .day.today { background:#facc15; font-weight:bold; }
+  .day.has-event .dot { display:block; }
+  .dot { display:none; width:5px; height:5px; background:#3b82f6; border-radius:50%; margin:2px auto 0; }
+  .day.today .dot { background:#111; }
+
+  .events-title { font-size:13px; font-weight:600; margin:20px 0 8px; color:#555; }
+  .event { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:13px; }
+  .event:last-child { border-bottom:none; }
+  .event i { width:16px; text-align:center; margin-top:2px; flex-shrink:0; }
+  .event-text { color:#222; line-height:1.4; }
+  .no-school { color:#ef4444; }
+
+  a.back { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border:1px solid #ccc; border-radius:10px; text-decoration:none; color:#000; font-size:14px; margin-top:20px; }
+  a.back:hover { background:#f5f5f5; }
+
+  #dm-btn { position:fixed; top:14px; right:16px; background:#fff; border:1px solid #ccc; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; z-index:999; }
+  body.dark { background:#111 !important; color:#eee !important; }
+  body.dark #dm-btn { background:#222; border-color:#444; color:#eee; }
+  body.dark a, body.dark a.back { border-color:#333 !important; color:#eee !important; }
+  body.dark a:hover, body.dark a.back:hover { background:#222 !important; }
+  body.dark .sub, body.dark .label, body.dark .date, body.dark .term, body.dark .events-title { color:#666 !important; }
+  body.dark .section-title { color:#555 !important; border-color:#222 !important; }
+  body.dark .event { border-color:#222 !important; }
+  body.dark .event-text { color:#ccc !important; }
+  body.dark .weather-info { color:#aaa !important; }
+  body.dark .month-title { border-color:#222 !important; color:#ddd !important; }
+  body.dark .nav-btn { background:#111 !important; border-color:#333 !important; color:#eee !important; }
+  body.dark .nav-btn:hover { background:#222 !important; }
+  body.dark .dow { color:#555 !important; }
+  body.dark .day { color:#bbb !important; }
+  body.dark .day.other { color:#444 !important; }
+  body.dark .day.today { background:#facc15 !important; color:#111 !important; }
+  body.dark hr { border-color:#222 !important; }
+  body.dark .periods li { border-color:#222 !important; color:#ccc !important; }
+  body.dark .periods li span.time { color:#555 !important; }
+  body.dark .no-events { color:#555 !important; }
+  body.dark .clock { color:#eee !important; }
+  body.dark .weather-temp { color:#eee !important; }
+
+</style>
+</head>
+<body>
+
+<h1><i class="fa-solid fa-calendar-days"></i> Calendar</h1>
+
+<div class="nav">
+  <button class="nav-btn" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+  <div class="month-label" id="month-label"></div>
+  <button class="nav-btn" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<div class="grid" id="cal-grid"></div>
+
+<div class="events-title" id="events-title"></div>
+<div id="events-list"></div>
+
+<a class="back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Back</a>
+
+<script>
+const EVENTS = [
+  { date:"2025-12-22", end:"2026-01-02", text:"Winter Break", icon:"fa-snowflake", color:"#3b82f6" },
+  { date:"2026-01-07", text:"Students Return from Winter Break", icon:"fa-school", color:"#10b981" },
+  { date:"2026-01-08", text:"Basketball vs. Whitworth Buchanan MS (Away)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-09", text:"Report Cards", icon:"fa-file-lines", color:"#8b5cf6" },
+  { date:"2026-01-12", text:"Basketball vs. Oakland MS (Home)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-13", text:"Basketball vs. Coffee County MS (Away)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-15", text:"Basketball vs. Siegel MS (Home)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-16", text:"6th/8th Grade Health Screenings", icon:"fa-stethoscope", color:"#06b6d4" },
+  { date:"2026-01-19", text:"Martin Luther King Jr. Day — No School", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-01-20", text:"Basketball vs. Blackman MS (Home)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-01-22", text:"Basketball vs. Rockvale MS (Away)", icon:"fa-basketball", color:"#f59e0b" },
+  { date:"2026-02-05", text:"Progress Reports", icon:"fa-chart-bar", color:"#8b5cf6" },
+  { date:"2026-02-16", text:"Presidents' Day — No School", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-02-19", text:"CPA Preview Concert with RHS (6:30pm)", icon:"fa-music", color:"#f43f5e" },
+  { date:"2026-02-25", text:"Baseball vs. Central Magnet School (4:30pm, Barfield Park)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-06", text:"End of 3rd 9 Weeks", icon:"fa-flag-checkered", color:"#111" },
+  { date:"2026-03-09", text:"Baseball/Soccer/Softball vs. Siegel MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-10", text:"STEAM Night (5:00pm – 6:30pm)", icon:"fa-flask", color:"#06b6d4" },
+  { date:"2026-03-10", text:"Spring Picture Day", icon:"fa-camera", color:"#f59e0b" },
+  { date:"2026-03-12", text:"Teacher Admin Day — No School for Students", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-03-12", text:"Baseball/Soccer/Softball vs. Rock Springs MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-16", text:"Baseball/Soccer/Softball vs. Rocky Fork MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-19", text:"Parent/Teacher Conferences (3:00pm – 6:00pm)", icon:"fa-people-arrows", color:"#8b5cf6" },
+  { date:"2026-03-19", text:"Baseball/Soccer/Softball vs. Whitworth Buchanan MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-23", text:"Baseball/Soccer/Softball vs. Smyrna MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-24", text:"Band Concert (6:30pm)", icon:"fa-music", color:"#f43f5e" },
+  { date:"2026-03-26", text:"Baseball/Soccer/Softball vs. Central Magnet (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-03-30", end:"2026-04-03", text:"Spring Break", icon:"fa-sun", color:"#f59e0b" },
+  { date:"2026-04-06", text:"Baseball/Soccer/Softball vs. Rockvale MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-09", text:"Baseball/Soccer/Softball vs. Blackman MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-13", text:"Baseball/Soccer/Softball vs. Stewart's Creek MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-13", end:"2026-05-01", text:"TCAP Testing", icon:"fa-pencil", color:"#ef4444" },
+  { date:"2026-04-16", text:"Progress Reports", icon:"fa-chart-bar", color:"#8b5cf6" },
+  { date:"2026-04-16", text:"Baseball/Soccer/Softball vs. Oakland MS (Away)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-04-20", text:"Baseball/Soccer/Softball vs. LaVergne MS (Home)", icon:"fa-baseball", color:"#84cc16" },
+  { date:"2026-05-05", text:"Teacher Admin Day — No School for Students", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-05-08", text:"Spring Fling Semi-Formal Dance (6:00pm – 8:00pm)", icon:"fa-music", color:"#f43f5e" },
+  { date:"2026-05-09", text:"6th Grade All Star Band", icon:"fa-star", color:"#f59e0b" },
+  { date:"2026-05-14", text:"CHMS Fine Arts Night (6:00pm – 7:00pm)", icon:"fa-palette", color:"#f43f5e" },
+  { date:"2026-05-15", text:"Cougar Carnival", icon:"fa-ferris-wheel", color:"#f59e0b" },
+  { date:"2026-05-25", text:"Memorial Day — No School", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-05-28", text:"Teacher Workday — No School for Students", icon:"fa-circle-xmark", color:"#ef4444", noschool:true },
+  { date:"2026-05-29", text:"2-Hour Day / End of 4th 9 Weeks / Report Cards", icon:"fa-flag-checkered", color:"#111" },
+];
+
+// Build a set of dates that have events (including ranges)
+function getEventDates() {
+  const map = {}; // "YYYY-MM-DD" -> [events]
+  for (const ev of EVENTS) {
+    const start = new Date(ev.date + "T12:00:00");
+    const end = ev.end ? new Date(ev.end + "T12:00:00") : start;
+    let d = new Date(start);
+    while (d <= end) {
+      const key = d.toISOString().slice(0,10);
+      if (!map[key]) map[key] = [];
+      map[key].push(ev);
+      d.setDate(d.getDate()+1);
+    }
+  }
+  return map;
+}
+
+const eventMap = getEventDates();
+const today = new Date();
+today.setHours(0,0,0,0);
+
+let viewDate = new Date(today.getFullYear(), today.getMonth(), 1);
+
+function render() {
+  const y = viewDate.getFullYear(), mo = viewDate.getMonth();
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  document.getElementById("month-label").textContent = monthNames[mo] + " " + y;
+
+  const firstDay = new Date(y, mo, 1).getDay();
+  const daysInMonth = new Date(y, mo+1, 0).getDate();
+  const daysInPrev = new Date(y, mo, 0).getDate();
+
+  const dows = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  let html = dows.map(d => `<div class="dow">${d}</div>`).join("");
+
+  // prev padding
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += `<div class="day other">${daysInPrev - i}</div>`;
+  }
+
+  // current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${y}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const isToday = (d === today.getDate() && mo === today.getMonth() && y === today.getFullYear());
+    const hasEv = !!eventMap[key];
+    html += `<div class="day${isToday?" today":""}${hasEv?" has-event":""}" onclick="showEvents('${key}',${d})">${d}<span class="dot"></span></div>`;
+  }
+
+  // next padding
+  const total = firstDay + daysInMonth;
+  const rem = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= rem; i++) {
+    html += `<div class="day other">${i}</div>`;
+  }
+
+  document.getElementById("cal-grid").innerHTML = html;
+
+  // Auto show today's or first available events
+  const todayKey = today.toISOString().slice(0,10);
+  if (mo === today.getMonth() && y === today.getFullYear()) {
+    showEvents(todayKey, today.getDate());
+  } else {
+    document.getElementById("events-title").textContent = "";
+    document.getElementById("events-list").innerHTML = "";
+  }
+}
+
+function showEvents(key, day) {
+  const evs = eventMap[key] || [];
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const mo = viewDate.getMonth();
+  const y = viewDate.getFullYear();
+  document.getElementById("events-title").textContent = monthNames[mo] + " " + day;
+
+  if (!evs.length) {
+    document.getElementById("events-list").innerHTML = `<div style="font-size:13px;color:#aaa;padding:8px 0;">No events</div>`;
+    return;
+  }
+
+  // Deduplicate (ranges show same event each day)
+  const seen = new Set();
+  const unique = evs.filter(e => { if(seen.has(e.text)) return false; seen.add(e.text); return true; });
+
+  document.getElementById("events-list").innerHTML = unique.map(e =>
+    `<div class="event${e.noschool?" no-school":""}">
+      <i class="fa-solid ${e.icon}" style="color:${e.noschool?"#ef4444":e.color}"></i>
+      <span class="event-text">${e.text}</span>
+    </div>`
+  ).join("");
+}
+
+function changeMonth(dir) {
+  viewDate.setMonth(viewDate.getMonth() + dir);
+  render();
+}
+
+render();
+</script>
+
+<a class="back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Back</a>
+
+
+
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      window.addEventListener("DOMContentLoaded",function(){
+        var b=document.getElementById("dm-btn");
+        if(b) b.innerHTML='<i class="fa-solid fa-sun"></i>';
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    document.getElementById("dm-btn").textContent=on?"☀️ Light":"🌙 Dark";
+  }
+</script>
+
+
+<button id="dm-btn" onclick="toggleDark()" title="Toggle dark mode">
+  <i id="dm-icon" class="fa-solid fa-moon"></i>
+</button>
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      document.addEventListener("DOMContentLoaded",function(){
+        var i=document.getElementById("dm-icon");
+        if(i){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    var i=document.getElementById("dm-icon");
+    if(on){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+    else  { i.classList.remove("fa-sun");  i.classList.add("fa-moon"); }
+  }
+</script>
+
+</body>
+</html>

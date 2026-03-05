@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>andrews school site</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 12px; background: #fff; }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  a { display: flex; align-items: center; gap: 10px; padding: 14px 24px; border: 1px solid #ccc; border-radius: 10px; text-decoration: none; color: #000; font-size: 15px; width: 220px; }
+  a:hover { background: #f5f5f5; }
+
+  #dm-btn { position:fixed; top:14px; right:16px; background:#fff; border:1px solid #ccc; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; z-index:999; }
+  body.dark { background:#111 !important; color:#eee !important; }
+  body.dark #dm-btn { background:#222; border-color:#444; color:#eee; }
+  body.dark a { border-color:#333 !important; color:#eee !important; }
+  body.dark a:hover { background:#222 !important; }
+
+</style>
+</head>
+<body>
+  <h1>andrews school site</h1>
+  <a href="quarter.html"><i class="fa-solid fa-graduation-cap"></i> Quarter Countdown</a>
+  <a href="period.html"><i class="fa-solid fa-clock"></i> Next Period</a>
+  <a href="dismissal.html"><i class="fa-solid fa-bus-simple"></i> Dismissal</a>
+  <a href="calendar.html"><i class="fa-solid fa-calendar-days"></i> Calendar</a>
+  <a href="events.html"><i class="fa-solid fa-calendar-day"></i> Today's Events</a>
+
+
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      window.addEventListener("DOMContentLoaded",function(){
+        var b=document.getElementById("dm-btn");
+        if(b) b.innerHTML='<i class="fa-solid fa-sun"></i>';
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    document.getElementById("dm-btn").textContent=on?"☀️ Light":"🌙 Dark";
+  }
+</script>
+
+
+<button id="dm-btn" onclick="toggleDark()" title="Toggle dark mode">
+  <i id="dm-icon" class="fa-solid fa-moon"></i>
+</button>
+<script>
+  (function(){
+    if(document.cookie.indexOf("dark=1")>=0){
+      document.body.classList.add("dark");
+      document.addEventListener("DOMContentLoaded",function(){
+        var i=document.getElementById("dm-icon");
+        if(i){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+      });
+    }
+  })();
+  function toggleDark(){
+    var on=document.body.classList.toggle("dark");
+    document.cookie="dark="+(on?1:0)+";path=/;max-age=31536000";
+    var i=document.getElementById("dm-icon");
+    if(on){ i.classList.remove("fa-moon"); i.classList.add("fa-sun"); }
+    else  { i.classList.remove("fa-sun");  i.classList.add("fa-moon"); }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 3.5rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fff 0%, #888 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .header h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .back-btn {
+      padding: 14px 24px;
+      background: #000;
+      border: 1px solid rgba(128, 128, 128, 0.3);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s ease-out;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .back-btn::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: 12px;
+      padding: 2px;
+      background: conic-gradient(
+        from var(--angle, 0deg) at var(--x, 50%) var(--y, 50%),
+        transparent 0deg,
+        rgba(128, 128, 128, 0.4) 90deg,
+        transparent 180deg,
+        transparent 360deg
+      );
+      -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .back-btn:hover::before {
+      background: conic-gradient(
+        from var(--angle, 0deg) at var(--x, 50%) var(--y, 50%),
+        transparent 0deg,
+        rgba(255, 255, 255, 0.8) 90deg,
+        transparent 180deg,
+        transparent 360deg
+      );
+      opacity: 1;
+    }
+
+    .back-btn:active {
+      transform: scale(0.95);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 48px auto;
+      perspective: 1000px;
+      max-width: 1400px;
+    }
+
+    .game-box {
+      background: #000;
+      border-radius: 16px;
+      padding: 16px;
+      text-decoration: none;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.1s ease-out;
+      transform-style: preserve-3d;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(128, 128, 128, 0.3);
+    }
+
+    .game-box::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: 16px;
+      padding: 2px;
+      background: conic-gradient(
+        from var(--angle, 0deg) at var(--x, 50%) var(--y, 50%),
+        transparent 0deg,
+        rgba(128, 128, 128, 0.4) 90deg,
+        transparent 180deg,
+        transparent 360deg
+      );
+      -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .game-box:hover::before {
+      background: conic-gradient(
+        from var(--angle, 0deg) at var(--x, 50%) var(--y, 50%),
+        transparent 0deg,
+        rgba(255, 255, 255, 0.8) 90deg,
+        transparent 180deg,
+        transparent 360deg
+      );
+      opacity: 1;
+    }
+
+    .game-box img {
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
+      transition: transform 0.1s ease-out;
+    }
+
+    .game-title {
+      margin-top: 14px;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #fff;
+      text-align: center;
+      font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .mini-tag {
+      margin-top: 8px;
+      font-weight: 700;
+      font-size: 0.65rem;
+      color: #fff;
+      text-align: center;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+
+    .icon-btn {
+      width: 50px;
+      height: 50px;
+      background: #000;
+      border: 1px solid rgba(128, 128, 128, 0.3);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.1s ease-out;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+    }
+
+    .icon-btn::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: 12px;
+      padding: 2px;
+      background: conic-gradient(
+        from var(--angle, 0deg) at var(--x, 50%) var(--y, 50%),
+        transparent 0deg,
+        rgba(128, 128, 128, 0.4) 90deg,
+        transparent 180deg,
+        transparent 360deg
+      );
+      -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .site-title {
+      max-width: 420px;
+      width: 100%;
+      position: relative;
+      height: auto;
+      margin-bottom: 30px;
+    }
+
+    .icon-btn:hover::before {
+      background: conic-gradient(
+        from var(--angle, 0deg) at var(--x, 50%) var(--y, 50%),
+        transparent 0deg,
+        rgba(255, 255, 255, 0.8) 90deg,
+        transparent 180deg,
+        transparent 360deg
+      );
+      opacity: 1;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
+    }
+
+    .icon-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="A4CROP.png" alt="A4PLAY" class="site-title">
+    <a href="/" class="back-btn">
+      <i class="fas fa-arrow-left"></i>
+      Back to Games
+    </a>
+  </div>
+
+  <div class="grid" id="gameGrid">
+    <a href="https://download1322.mediafire.com/8eedz51cv4agbhucbjYw3AZZ6KRoiBz8zYg9YwixLZ83wOqBcMy2Mm5J4KHe5Z4QuwOY0zZgDpfTBKsldElKB1efFGb9IEceUJMu5eBvCCnX5xmMJdm2LOUItcvgP2nL8Q3uz6LJYGOlnVHIvl3tKxiejG8Q1UQEi-HMztNKC5geQA/r0jb62jsyze534d/Undertale.zip" class="game-box" data-title="Undertale" data-tag="RHYTHM">
+      <img src="https://cdn2.steamgriddb.com/icon/3b9be7e15b46c42911f39a4a9e861022/32/512x512.png" alt="Undertale">
+      <div class="game-title">Undertale</div>
+      <div class="mini-tag">RPG</div>
+    </a>
+    <a href="https://download1654.mediafire.com/ut6jl65gersg-qVtZauU0fMgMpgtDYtsuo3uG3u8ahghfzIuFnqzUsNspngXOf0jZrHR-yaVudGVh5gKgRwBOcqKmZv_30j_DyctVw8MPDCZGQJFVbW-U7XWr6HdIO13eeNW5tbEKZ9sqk8D71Sn_nuxpoqZvgZkAz9GaV2RvRZKew/p5rnwdompyteogv/Stardew+Valley.zip" class="game-box" data-title="Stardew Valley" data-tag="RPG">
+      <img src="https://cdn2.steamgriddb.com/icon/2119b8d43eafcf353e07d7cb5554170b/32/256x256.png" alt="Stardew Valley">
+      <div class="game-title">Stardew Valley</div>
+      <div class="mini-tag">RPG</div>
+    </a>
+    <a href="https://download844.mediafire.com/1ga3g0e7igegYpz7zy-pG2OXjJB1NuNWqUHvIP704RTeMWkwz-5dOlFGufx9hmxOFz-ZtmGEqXbHi4qWyafaIt7XggU4f_Hs9hBaKOXP6t2NizuWVEVmBt3IriY1tqJrDmC-nlOhdQ3WJzLk3Uo6NdSoUjinNU6aPQ0KJB-RTu6F7Q/c1a8l7161tiwhej/Plants+VS+Zombies+Game+Of+The+Year+Edition.zip" class="game-box" data-title="Plants VS Zombies Game Of The Year Edition" data-tag="RPG">
+      <img src="https://cdn.jsdelivr.net/gh/gn-math/covers@main/232.png" alt="Plants VS Zombies">
+      <div class="game-title">Plants VS Zombies</div>
+      <div class="mini-tag">TOWER DEFENSE</div>
+    </a>
+    <a href="https://download1472.mediafire.com/ajpkqv0r49ggOWSKcDJIcWOkcU3quRTTVAU1OvmrjTc6tn3ZIGAMYZpXpQIp15lcKBK65btTAa9ojdosx8zypH-SJztgkra-trikJsccEXtQ-WpVg_or0qe_tyFwE25kYWftGrx-NfN8JDALyMxXhO4T6tnaDIZqfaLSapay9LIxow/3hoj3bieslvw3bk/Five+Nights+at+Freddys.zip" class="game-box" data-title="Five Nights at Freddy's" data-tag="HORROR">
+      <img src="https://cdn.jsdelivr.net/gh/gn-math/covers@main/38.png" alt="Five Nights at Freddy's">
+      <div class="game-title">Five Nights at Freddy's</div>
+      <div class="mini-tag">HORROR</div>
+    </a>
+    <a href="https://download1500.mediafire.com/12vncl34jyegsFjOA6mk1yeRTMuTTAfcm4Mab8qJlE1B9JUkZ59y30vysnBcbaphhwHWJCQCPawgwqLKgcKnyYnOi1eT9pz-FIIHjSGGCGoU_312nCK9fhsc9OrP0Qm7rw03D1Y1PvN4wUY_E3QjHRr-a3qK1cBsixt1bahqTPcjdg/4v4vdyh114um4fj/Five+Nights+at+Freddys+2.zip" class="game-box" data-title="Five Nights at Freddy's" data-tag="HORROR">
+      <img src="https://cdn.jsdelivr.net/gh/gn-math/covers@main/39.png" alt="Five Nights at Freddy's 2">
+      <div class="game-title">Five Nights at Freddy's 2</div>
+      <div class="mini-tag">HORROR</div>
+    </a>
+    <a href="https://download1591.mediafire.com/2l1s07pf8cjg7qK1zHVbLC9-sqHGwh_CfSVee-C8-uciGPS8hWKl1uTC_lnZrPkUi7eAX5Gmm2hO_9LHFhYVgzna0k0RBF63r1xcPtcHSgslCT_r88AnSZxYIS3xP1_HYBY5o1rBP_HSZKl_2WR519zwK86N1VViq3innnFR-_aR-Q/dsbime67kw47vkw/Five+Nights+at+Freddys+3.zip" class="game-box" data-title="Five Nights at Freddy's 3" data-tag="HORROR">
+      <img src="https://cdn.jsdelivr.net/gh/gn-math/covers@main/40.png" alt="Five Nights at Freddy's 3">
+      <div class="game-title">Five Nights at Freddy's 3</div>
+      <div class="mini-tag">HORROR</div>
+    </a>
+    <a href="https://download937.mediafire.com/i5zdi2e0nvrg8VbfHqlVOdPs3YAoyirhJ_bTMyUauQMtdchykTDrArb0WNft6-hBH6xsRmxf7zaFokwe_7-a_RgjWbmK-z2RPiGpFGq4Bogpm17YliE_j99OEwmgIVjSD-wtpSQ2XoYHG5WnPKOC7VnwkkCkX5GUUyGeUCiM7yH3Jw/3wkrxj1a7nnwsrm/Five+Nights+at+Freddys+4.zip" class="game-box" data-title="Five Nights at Freddy's 4" data-tag="HORROR">
+      <img src="https://cdn.jsdelivr.net/gh/gn-math/covers@main/41.png" alt="Five Nights at Freddy's 4">
+      <div class="game-title">Five Nights at Freddy's 4</div>
+      <div class="mini-tag">HORROR</div>
+    </a>
+    <a href="https://download844.mediafire.com/boatljgzejmg0irV2TeO-irQVRsXRxolGSkjjpaeqhHr62zeRN0tQfSP85Ljeeve2HE7Kh4CN0T7fYRHSgi5kNRaYVx18Wk_8SzAdqfEVGlUMs5bxmsy3AWT2b8qnpuoRnA4NB1ZJVFGB3l4IS4vl_E8XWO0kL2Bsto143IE5oSGHA/diikn6k7dki6d3b/Bloons+TD+5.zip" class="game-box" data-title="Bloons TD 5" data-tag="TOWER DEFENSE">
+      <img src="https://cdn2.steamgriddb.com/icon_thumb/1371bccec2447b5aa6d96d2a540fb401.png" alt="Bloons TD 5">
+      <div class="game-title">Bloons TD 5</div>
+      <div class="mini-tag">TOWER DEFENSE</div>
+    </a>
+    <a href="https://drive.google.com/file/d/1Ml2-IUd8kPMVKrA8_jnqjPMGFj48HHH9/view" class="game-box" data-title="The Binding of Isaac: Rebirth" data-tag="RPG">
+      <img src="https://cdn2.steamgriddb.com/icon/3d1ed124d48ac4f12106b32decf840b0/32/256x256.png" alt="The Binding of Isaac: Rebirth">
+      <div class="game-title">The Binding of Isaac: Rebirth</div>
+      <div class="mini-tag">RPG</div>
+    </a>
+    <a href="https://gofile.io/d/Sle8zl" class="game-box" data-title="Bloons TD 6" data-tag="TOWER DEFENSE">
+      <img src="https://cdn2.steamgriddb.com/icon/146ff1b077e7729999ed0b299a2fe639/32/256x256.png" alt="Bloons TD 6">
+      <div class="game-title">Bloons TD 6</div>
+      <div class="mini-tag">TOWER DEFENSE</div>
+    </a>
+    <a href="https://github.com/Moosync/Moosync/archive/refs/tags/Moosync-v11.0.2.zip" class="game-box" data-title="Moosync" data-tag="SPOTIFY CLIENT">
+      <img src="https://moosync.app/assets/img/logo.svg" alt="Moosync">
+      <div class="game-title">Moosync</div>
+      <div class="mini-tag">SPOTIFY CLIENT</div>
+    </a>
+    <a href="https://mega.nz/file/HMlzSYoT#j5WSc5L_7dkhL37Rg3bTMyz96BujVxxFuUiQrwSz4GU" class="game-box" data-title="DELTARUNE" data-tag="RPG (NOT WORKING)">
+      <img src="https://cdn2.steamgriddb.com/icon/6e2d5d50a943a0e0d738377f51011685/32/256x256.png" alt="Moosync">
+      <div class="game-title">DELTARUNE</div>
+      <div class="mini-tag">RPG</div>
+    </a>
+    <a href="https://mega.nz/file/nItxyAKC#3HZd61Zj8wCcJagUWjgkxU6oc8GB7Z_-b0XTR31Z4o4" class="game-box" data-title="Geometry Dash" data-tag="RPG">
+      <img src="https://cdn2.steamgriddb.com/icon/750ed96f0d56d3346cda66d24bc0cbd5/32/256x256.png" alt="Geometry Dash">
+      <div class="game-title">Geometry Dash</div>
+      <div class="mini-tag">RPG</div>
+    </a>
+  </div>
+
+  <button class="icon-btn" id="cloakBtn">
+    <i class="fas fa-ban"></i>
+  </button>
+
+  <script>
+    // 3D Rotation for Game Box
+    document.querySelectorAll('.game-box').forEach(box => {
+      box.addEventListener('mousemove', (e) => {
+        const rect = box.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const percentX = (x / rect.width) * 100;
+        const percentY = (y / rect.height) * 100;
+        
+        const rotateX = ((y - centerY) / centerY) * 15;
+        const rotateY = ((x - centerX) / centerX) * -15;
+        
+        const angle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
+        
+        box.style.setProperty('--x', `${percentX}%`);
+        box.style.setProperty('--y', `${percentY}%`);
+        box.style.setProperty('--angle', `${angle}deg`);
+        box.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+      });
+      
+      box.addEventListener('mouseleave', () => {
+        box.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+      });
+    });
+
+    // Glow effect for buttons
+    function addGlowEffect(element) {
+      element.addEventListener('mousemove', (e) => {
+        const rect = element.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const percentX = (x / rect.width) * 100;
+        const percentY = (y / rect.height) * 100;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const angle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
+        
+        element.style.setProperty('--x', `${percentX}%`);
+        element.style.setProperty('--y', `${percentY}%`);
+        element.style.setProperty('--angle', `${angle}deg`);
+      });
+    }
+
+    addGlowEffect(document.querySelector('.back-btn'));
+    addGlowEffect(document.querySelector('.icon-btn'));
+
+    // Cloak functionality
+    let isCloaked = false;
+    const originalTitle = document.title;
+    const originalFavicon = document.querySelector('link[rel="icon"]')?.href || '';
+
+    const cloakBtn = document.getElementById('cloakBtn');
+    const cloakIcon = cloakBtn.querySelector('i');
+
+    cloakBtn.addEventListener('click', () => {
+      isCloaked = !isCloaked;
+      
+      if (isCloaked) {
+        // Cloak the tab - disguise as Google
+        document.title = 'Google';
+        
+        // Change favicon to Google's
+        let favicon = document.querySelector('link[rel="icon"]');
+        if (!favicon) {
+          favicon = document.createElement('link');
+          favicon.rel = 'icon';
+          document.head.appendChild(favicon);
+        }
+        favicon.href = 'https://www.google.com/favicon.ico';
+        
+        // Update button
+        cloakIcon.className = 'fas fa-eye-slash';
+        cloakBtn.classList.add('active');
+      } else {
+        // Uncloak - restore original
+        document.title = originalTitle;
+        
+        let favicon = document.querySelector('link[rel="icon"]');
+        if (favicon) {
+          if (originalFavicon) {
+            favicon.href = originalFavicon;
+          } else {
+            favicon.remove();
+          }
+        }
+        
+        // Update button
+        cloakIcon.className = 'fas fa-ban';
+        cloakBtn.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>
